@@ -1,0 +1,233 @@
+/* style.css */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    font-family: 'Courier New', monospace;
+}
+body {
+    background: #0a0c1b;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 5px;
+}
+#gameContainer {
+    background: #1a1e34;
+    padding: 8px;
+    border-radius: 20px;
+    border: 3px solid #e94560;
+    max-width: 900px;
+    width: 100%;
+}
+#canvasWrapper {
+    position: relative;
+    background: #000;
+    border-radius: 15px;
+    overflow: hidden;
+    border: 3px solid #0f3460;
+}
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #1a4d2e;
+    touch-action: none;
+}
+/* MINI MAP */
+#miniMap {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 120px;
+    height: 120px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 3px solid #e94560;
+    border-radius: 10px;
+    z-index: 100;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+}
+#miniMapCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+/* Campfire indicator */
+#campfireIndicator {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(15, 52, 96, 0.9);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 30px;
+    border: 2px solid #ffaa00;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
+}
+#campfireDirection { color: #ffaa00; }
+#campfireDistance { color: #e94560; }
+/* Top stats bar */
+#statsBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0f3460;
+    padding: 5px 10px;
+    border-radius: 30px;
+    margin: 5px 0;
+    border: 2px solid #e94560;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
+.stat { display: flex; align-items: center; gap: 3px; }
+.stat span { color: #e94560; margin-left: 2px; }
+/* Campfire info */
+#campfireInfo {
+    background: #0f3460;
+    padding: 5px 10px;
+    border-radius: 20px;
+    margin: 5px 0;
+    border: 2px solid #e94560;
+    color: white;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+#campfireHealth { color: #ffaa00; font-weight: bold; }
+#warningMessage { color: #ff0000; font-size: 13px; font-weight: bold; animation: blink 1s infinite; display: none; }
+/* Tower cooldown */
+#towerCooldown {
+    background: #16213e;
+    padding: 5px 10px;
+    border-radius: 15px;
+    margin: 5px 0;
+    border: 1px solid #e94560;
+    color: #ffaa00;
+    font-size: 12px;
+    text-align: center;
+}
+#towerCooldown span { color: #e94560; font-weight: bold; }
+/* Upgrade requirements */
+#upgradeRequirements {
+    background: #16213e;
+    padding: 5px 10px;
+    border-radius: 15px;
+    margin: 5px 0;
+    border: 1px solid #e94560;
+    color: #ffaa00;
+    font-size: 11px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.req-item { display: flex; align-items: center; gap: 3px; }
+.req-item.met { color: #00ff00; }
+/* Inventory - expanded for 20 materials */
+#inventoryBar {
+    background: #16213e;
+    padding: 8px;
+    border-radius: 15px;
+    margin: 5px 0;
+    border: 2px solid #e94560;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    color: white;
+    font-size: 10px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+.inventory-item {
+    background: #0f3460;
+    padding: 5px 3px;
+    border-radius: 8px;
+    border: 1px solid #e94560;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+/* Rarity backgrounds */
+.inventory-item.common { border-color: #aaaaaa; box-shadow: 0 0 5px #aaaaaa; }
+.inventory-item.uncommon { border-color: #32cd32; box-shadow: 0 0 5px #32cd32; }
+.inventory-item.rare { border-color: #4169e1; box-shadow: 0 0 8px #4169e1; }
+.inventory-item.epic { border-color: #9370db; box-shadow: 0 0 10px #9370db; }
+.inventory-item.legendary { border-color: #ffd700; box-shadow: 0 0 15px #ffd700; animation: glow 2s infinite; }
+@keyframes glow {
+    0% { box-shadow: 0 0 5px #ffd700; }
+    50% { box-shadow: 0 0 20px #ffd700; }
+    100% { box-shadow: 0 0 5px #ffd700; }
+}
+.item-icon { font-size: 18px; margin-bottom: 2px; filter: drop-shadow(0 0 3px currentColor); }
+.item-name { font-size: 8px; font-weight: bold; margin-bottom: 2px; }
+.item-count { font-weight: bold; font-size: 12px; }
+.common .item-count { color: #aaaaaa; }
+.uncommon .item-count { color: #32cd32; }
+.rare .item-count { color: #4169e1; }
+.epic .item-count { color: #9370db; }
+.legendary .item-count { color: #ffd700; }
+/* Popups */
+#towerPopup, #craftingBenchPopup, #buildingInventory {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1a1e34;
+    border: 4px solid #e94560;
+    border-radius: 15px;
+    padding: 20px;
+    display: none;
+    z-index: 1000;
+    min-width: 350px;
+    max-width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+}
+#towerPopup h3, #craftingBenchPopup h3, #buildingInventory h3 { color: #e94560; margin-bottom: 15px; text-align: center; font-size: 22px; }
+#towerEnemy { background: #0f3460; border: 2px solid #e94560; border-radius: 10px; padding: 15px; margin-bottom: 15px; color: white; }
+#towerEnemyHealth { color: #ff0000; font-size: 24px; font-weight: bold; }
+#towerPlayerHealth { color: #00ff00; font-size: 20px; margin: 10px 0; }
+#towerBattleLog { background: #16213e; border: 1px solid #e94560; border-radius: 8px; padding: 10px; margin: 10px 0; min-height: 60px; color: #ffaa00; font-size: 12px; }
+.towerBtn { background: #e94560; color: white; border: none; border-radius: 8px; padding: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 5px; width: calc(50% - 10px); }
+.towerBtn.secondary { background: #0f3460; border: 2px solid #e94560; }
+#craftingBenchPopup .crafting-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+.bench-craft-slot { background: #0f3460; border: 2px solid #e94560; border-radius: 12px; padding: 15px; text-align: center; color: white; cursor: pointer; transition: 0.2s; }
+.bench-craft-slot:active { transform: scale(0.95); background: #e94560; }
+.bench-craft-slot .item-name { font-size: 14px; color: #ffaa00; margin-bottom: 5px; font-weight: bold; }
+.bench-craft-slot .item-req { font-size: 11px; color: #aaa; }
+#buildingInventory .inventory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+.building-slot { background: #0f3460; border: 2px solid #e94560; border-radius: 10px; padding: 10px; text-align: center; color: white; cursor: pointer; }
+.building-slot:active { background: #e94560; }
+.building-slot .item-icon { font-size: 20px; }
+.building-slot .item-count { font-size: 16px; color: #ffaa00; }
+#closeBenchPopup, #closeBuildingInventory { background: #e94560; color: white; border: none; border-radius: 10px; padding: 12px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+/* Controls */
+#controlsContainer { display: flex; gap: 8px; margin: 8px 0; align-items: center; justify-content: space-between; }
+#joystickWrapper { flex: 0 0 auto; }
+#joystickContainer { width: 100px; height: 100px; background: #0f3460; border-radius: 50%; border: 3px solid #e94560; position: relative; touch-action: none; }
+#joystick { width: 40px; height: 40px; background: #e94560; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 2px solid white; pointer-events: none; }
+#actionButtonsVertical { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.actionRow { display: flex; gap: 5px; justify-content: flex-end; }
+.actionBtn { background: #0f3460; color: white; border: 2px solid #e94560; border-radius: 25px; padding: 10px 15px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; box-shadow: 0 3px 0 #7a1f32; min-width: 80px; }
+.actionBtn:active { transform: translateY(3px); box-shadow: none; }
+#healBtn { background: #32cd32; color: white; border: 2px solid #e94560; border-radius: 25px; padding: 10px 15px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; box-shadow: 0 3px 0 #1a5a1a; min-width: 80px; }
+#healBtn:active { transform: translateY(3px); box-shadow: none; }
+#healBtn.disabled { opacity: 0.5; cursor: not-allowed; }
+#upgradeBtn { background: #ffaa00; color: black; border: 2px solid #e94560; border-radius: 25px; padding: 10px; font-size: 14px; font-weight: bold; cursor: pointer; width: 100%; }
+#upgradeBtn.disabled { opacity: 0.5; cursor: not-allowed; }
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
