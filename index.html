@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Last Light Survival · Rare Materials</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="canvasWrapper">
+            <canvas id="gameCanvas" width="800" height="500"></canvas>
+            <div id="miniMap"><canvas id="miniMapCanvas" width="120" height="120"></canvas></div>
+            <div id="campfireIndicator"><span>🔥</span><span id="campfireDirection">N</span><span id="campfireDistance">500m</span></div>
+        </div>
+        
+        <!-- POPUPS -->
+        <div id="towerPopup">
+            <h3>⚔️ RAIDING TOWER ⚔️</h3>
+            <div id="towerEnemy"><div>Tower Guardian</div><div>❤️ <span id="towerEnemyHealth">200</span></div></div>
+            <div id="towerPlayerHealth">Your Health: ❤️ <span id="towerPlayerHealthValue">100</span></div>
+            <div id="towerBattleLog">Enter the tower to start battle!</div>
+            <div><button class="towerBtn" id="towerAttackBtn">⚔️ ATTACK</button><button class="towerBtn secondary" id="towerHealBtn">💊 HEAL (5 Herbs)</button></div>
+            <div><button class="towerBtn secondary" style="width:100%" id="towerExitBtn">🚪 EXIT TOWER</button></div>
+        </div>
+        
+        <div id="craftingBenchPopup">
+            <h3>🔨 CRAFTING BENCH</h3>
+            <div class="crafting-grid" id="benchCraftingGrid"></div>
+            <button id="closeBenchPopup">CLOSE</button>
+        </div>
+        
+        <div id="buildingInventory">
+            <h3 id="buildingName">Building</h3>
+            <div class="inventory-grid" id="buildingInventoryGrid"></div>
+            <button id="closeBuildingInventory">CLOSE</button>
+        </div>
+        
+        <!-- TOP STATS -->
+        <div id="statsBar">
+            <div class="stat">❤️ <span id="healthValue">100</span></div>
+            <div class="stat">⚔️ <span id="weaponValue">Fist</span></div>
+            <div class="stat">🛡️ <span id="armorValue">0</span></div>
+            <div class="stat">🔥 <span id="campfireLevel">1</span>/5</div>
+            <div class="stat" id="timeDisplay">🌞 Day</div>
+        </div>
+        
+        <div id="campfireInfo">
+            <span>🔥 <span id="campfireHealth">500</span>/<span id="campfireMax">500</span> | LVL<span id="campfireLevelNum">1</span>/5 | R<span id="campfireRange">150</span></span>
+            <span id="timeRemaining">Day 14m</span>
+            <span id="warningMessage">⚠️ DANGER!</span>
+        </div>
+        
+        <div id="towerCooldown">🏰 Tower Status: <span id="towerStatus">Available Now!</span></div>
+        
+        <div id="upgradeRequirements">
+            <span class="req-item" id="reqWood">🪵 <span id="woodReq">50</span></span>
+            <span class="req-item" id="reqStone">🪨 <span id="stoneReq">40</span></span>
+            <span class="req-item" id="reqIron">⛓️ <span id="ironReq">20</span></span>
+            <span class="req-item" id="reqCrystal">💎 <span id="crystalReq">10</span></span>
+            <span class="req-item" id="reqGold">🟡 <span id="goldReq">5</span></span>
+        </div>
+        
+        <!-- INVENTORY -->
+        <div id="inventoryBar"></div>
+        
+        <!-- CONTROLS -->
+        <div id="controlsContainer">
+            <div id="joystickWrapper">
+                <div id="joystickContainer" ontouchstart="handleTouchStart(event)" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)">
+                    <div id="joystick"></div>
+                </div>
+            </div>
+            <div id="actionButtonsVertical">
+                <div class="actionRow"><button class="actionBtn" ontouchstart="playerAttack()">⚔️ ATTACK</button><button class="actionBtn" ontouchstart="playerInteract()">🔨 GATHER</button></div>
+                <div class="actionRow"><button class="actionBtn" ontouchstart="openCraftingBench()">📦 BENCH</button><button class="actionBtn" ontouchstart="repairCampfire()">🔥 REPAIR</button></div>
+                <div class="actionRow"><button id="healBtn" ontouchstart="playerHeal()">💊 HEAL (1 Herb)</button><button class="actionBtn" style="background:#9370db" ontouchstart="quickCraft()">⚡ QUICK</button></div>
+                <button id="upgradeBtn" ontouchstart="upgradeCampfire()">🔥 UPGRADE CAMPFIRE</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
