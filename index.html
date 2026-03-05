@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Last Light Survival - Rare Materials</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Last Light Survival - Computer Version</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -84,28 +84,40 @@
         <!-- Inventory with 20 materials and rarity classes -->
         <div id="inventoryBar"></div>
         
-        <!-- Controls -->
-        <div id="controlsContainer">
-            <div id="joystickWrapper">
-                <div id="joystickContainer">
-                    <div id="joystick"></div>
-                </div>
+        <!-- Computer Controls Info -->
+        <div id="controlsInfo">
+            <div class="control-group">
+                <span class="control-key">WASD</span> - Move
+                <span class="control-key">SPACE</span> - Attack
+                <span class="control-key">E</span> - Interact/Gather
+                <span class="control-key">R</span> - Repair Campfire
+                <span class="control-key">C</span> - Crafting Bench
+                <span class="control-key">Q</span> - Quick Craft
+                <span class="control-key">H</span> - Heal
+                <span class="control-key">U</span> - Upgrade Campfire
             </div>
-            
+            <div class="control-group">
+                <span class="control-key">Mouse</span> - Click buttons
+                <span class="control-key">ESC</span> - Close popups
+            </div>
+        </div>
+        
+        <!-- Action Buttons (also available for mouse) -->
+        <div id="controlsContainer">
             <div id="actionButtonsVertical">
                 <div class="actionRow">
-                    <button class="actionBtn" id="attackBtn">⚔️ ATTACK</button>
-                    <button class="actionBtn" id="interactBtn">🔨 GATHER</button>
+                    <button class="actionBtn" id="attackBtn">⚔️ ATTACK (SPACE)</button>
+                    <button class="actionBtn" id="interactBtn">🔨 GATHER (E)</button>
                 </div>
                 <div class="actionRow">
-                    <button class="actionBtn" id="benchBtn">📦 BENCH</button>
-                    <button class="actionBtn" id="repairBtn">🔥 REPAIR</button>
+                    <button class="actionBtn" id="benchBtn">📦 BENCH (C)</button>
+                    <button class="actionBtn" id="repairBtn">🔥 REPAIR (R)</button>
                 </div>
                 <div class="actionRow">
-                    <button id="healBtn">💊 HEAL (1 Herb)</button>
-                    <button class="actionBtn" style="background:#9370db" id="quickCraftBtn">⚡ QUICK</button>
+                    <button id="healBtn">💊 HEAL (H) - 1 Herb</button>
+                    <button class="actionBtn" style="background:#9370db" id="quickCraftBtn">⚡ QUICK (Q)</button>
                 </div>
-                <button id="upgradeBtn">🔥 UPGRADE CAMPFIRE</button>
+                <button id="upgradeBtn">🔥 UPGRADE CAMPFIRE (U)</button>
             </div>
         </div>
     </div>
