@@ -1,24 +1,20 @@
-// Canvas setup
+// ==================== CANVAS SETUP ====================
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const miniMapCanvas = document.getElementById('miniMapCanvas');
 const miniMapCtx = miniMapCanvas.getContext('2d');
 
-// BIGGER MAP - 2000x2000 world
+// ==================== GAME CONSTANTS ====================
 const WORLD_SIZE = 2000;
-
-// Center positions
 const CAMPFIRE_X = 1000;
 const CAMPFIRE_Y = 1000;
 const CRAFTING_BENCH_X = 1100;
 const CRAFTING_BENCH_Y = 1000;
 const TOWER_X = 500;
 const TOWER_Y = 500;
+const maxBuildings = 10;
 
-// Camera follows player
-let camera = { x: 0, y: 0 };
-
-// MATERIAL RARITY DEFINITIONS
+// ==================== MATERIAL DEFINITIONS ====================
 const materials = [
     // Common (green border) - 45% spawn rate
     { id: 'wood', name: 'Wood', icon: '🪵', rarity: 'common', spawnWeight: 45, baseHealth: 40, color: '#8B5A2B' },
@@ -55,7 +51,9 @@ const materials = [
 const materialMap = {};
 materials.forEach(m => materialMap[m.id] = m);
 
-// Player inventory initialized with zeros
+// ==================== GAME STATE ====================
+let camera = { x: 0, y: 0 };
+
 let player = {
     x: 900,
     y: 1000,
@@ -68,10 +66,9 @@ let player = {
     inventory: {}
 };
 
-// Initialize inventory with zeros
-materials.forEach(m => player.inventory[m.id] = 5); // Start with small amounts
+// Initialize inventory
+materials.forEach(m => player.inventory[m.id] = 5);
 
-// Campfire with 5 levels
 let campfire = {
     health: 500,
     maxHealth: 500,
@@ -85,7 +82,6 @@ let campfire = {
     ]
 };
 
-// Raiding Tower
 let tower = {
     x: TOWER_X,
     y: TOWER_Y,
@@ -97,7 +93,6 @@ let tower = {
     cooldownDays: 5
 };
 
-// Crafting bench
 let craftingBench = {
     x: CRAFTING_BENCH_X,
     y: CRAFTING_BENCH_Y,
@@ -109,7 +104,6 @@ let craftingBench = {
 let resources = [];
 let enemies = [];
 let buildings = [];
-const maxBuildings = 10;
 
 // Game state
 let gameTime = 6;
@@ -117,40 +111,17 @@ let gameRunning = true;
 let inTower = false;
 let towerBattleLog = [];
 
-// Joystick
-let joystickActive = false;
-let joystickDir = { x: 0, y: 0 };
-let joystickStartPos = { x: 0, y: 0 };
-let joystickCurrentPos = { x: 0, y: 0 };
+// Movement
+let keys = {};
+let moveSpeed = 5;
 
 // Cooldowns
 let attackCooldown = 0;
 let healCooldown = 0;
 
-// Initialize inventory display
-function updateInventoryDisplay() {
-    const inventoryBar = document.getElementById('inventoryBar');
-    inventoryBar.innerHTML = '';
-    
-    materials.forEach(m => {
-        const count = player.inventory[m.id] || 0;
-        const itemDiv = document.createElement('div');
-        itemDiv.className = `inventory-item ${m.rarity}`;
-        itemDiv.innerHTML = `
-            <div class="item-icon">${m.icon}</div>
-            <div class="item-name">${m.name}</div>
-            <div class="item-count">${count}</div>
-        `;
-        inventoryBar.appendChild(itemDiv);
-    });
-}
-
-// Generate resource based on rarity weights
+// ==================== INITIALIZATION FUNCTIONS ====================
 function generateRandomResource() {
-    // Calculate total weight
     const totalWeight = materials.reduce((sum, m) => sum + m.spawnWeight, 0);
-    
-    // Random number
     let random = Math.random() * totalWeight;
     let cumulative = 0;
     
@@ -167,11 +138,9 @@ function generateRandomResource() {
             };
         }
     }
-    
-    return materials[0]; // Fallback
+    return materials[0];
 }
 
-// Get random position
 function getRandomPosition() {
     return {
         x: 100 + Math.random() * (WORLD_SIZE - 200),
@@ -179,7 +148,6 @@ function getRandomPosition() {
     };
 }
 
-// Check if position is valid for resource
 function isValidResourcePosition(x, y) {
     if (isInsideCampfireRange(x, y)) return false;
     if (Math.sqrt((x - CRAFTING_BENCH_X) ** 2 + (y - CRAFTING_BENCH_Y) ** 2) < 80) return false;
@@ -187,13 +155,10 @@ function isValidResourcePosition(x, y) {
     return true;
 }
 
-// Generate world with rarity-based spawns
 function generateWorld() {
     resources = [];
     
-    // Generate resources based on rarity weights
-    const totalResources = 300; // More resources for bigger map
-    
+    const totalResources = 300;
     for (let i = 0; i < totalResources; i++) {
         const material = generateRandomResource();
         let pos;
@@ -216,14 +181,12 @@ function generateWorld() {
         }
     }
     
-    // Generate buildings
     buildings = [];
     for (let i = 0; i < maxBuildings; i++) {
         spawnNewBuilding();
     }
 }
 
-// Spawn new building with rare materials
 function spawnNewBuilding() {
     function isValidForBuilding(x, y) {
         if (isInsideCampfireRange(x, y)) return false;
@@ -248,7 +211,6 @@ function spawnNewBuilding() {
     
     let inventory = {};
     
-    // Buildings contain rare materials
     if (type === 'HOUSE') {
         inventory = {
             wood: Math.floor(Math.random() * 30) + 10,
@@ -306,7 +268,7 @@ function spawnNewBuilding() {
     });
 }
 
-// Time functions
+// ==================== UTILITY FUNCTIONS ====================
 function getTimeRemaining() {
     let hour = gameTime;
     let isDay = hour >= 6 && hour < 18;
@@ -324,7 +286,6 @@ function getTimeRemaining() {
     }
 }
 
-// Update camera
 function updateCamera() {
     camera.x = player.x - canvas.width/2;
     camera.y = player.y - canvas.height/2;
@@ -336,7 +297,120 @@ function worldToScreen(wx, wy) {
     return { x: wx - camera.x, y: wy - camera.y };
 }
 
-// Draw mini map
+function isInsideCampfireRange(x, y) {
+    let dist = Math.sqrt((x - CAMPFIRE_X) ** 2 + (y - CAMPFIRE_Y) ** 2);
+    return dist <= campfire.repelRange;
+}
+
+function isTowerAvailable() {
+    if (!tower.defeated) return true;
+    let daysPassed = (gameTime - tower.defeatTime);
+    if (daysPassed < 0) daysPassed += 24;
+    return daysPassed >= tower.cooldownDays;
+}
+
+function getTowerStatus() {
+    if (!tower.defeated) return "Available Now!";
+    let daysPassed = (gameTime - tower.defeatTime);
+    if (daysPassed < 0) daysPassed += 24;
+    let daysRemaining = Math.max(0, tower.cooldownDays - daysPassed);
+    if (daysRemaining <= 0) {
+        tower.defeated = false;
+        tower.guardianHealth = tower.guardianMaxHealth;
+        return "Available Now!";
+    }
+    return `Cooldown: ${daysRemaining.toFixed(1)} days`;
+}
+
+// ==================== UI FUNCTIONS ====================
+function updateInventoryDisplay() {
+    const inventoryBar = document.getElementById('inventoryBar');
+    inventoryBar.innerHTML = '';
+    
+    materials.forEach(m => {
+        const count = player.inventory[m.id] || 0;
+        const itemDiv = document.createElement('div');
+        itemDiv.className = `inventory-item ${m.rarity}`;
+        itemDiv.setAttribute('data-tooltip', `${m.name} - ${m.rarity}`);
+        itemDiv.innerHTML = `
+            <div class="item-icon">${m.icon}</div>
+            <div class="item-name">${m.name}</div>
+            <div class="item-count">${count}</div>
+        `;
+        inventoryBar.appendChild(itemDiv);
+    });
+}
+
+function updateCampfireIndicator() {
+    let dx = CAMPFIRE_X - player.x;
+    let dy = CAMPFIRE_Y - player.y;
+    let distance = Math.sqrt(dx*dx + dy*dy);
+    
+    let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    let direction = '';
+    
+    if (angle >= -22.5 && angle < 22.5) direction = 'E';
+    else if (angle >= 22.5 && angle < 67.5) direction = 'NE';
+    else if (angle >= 67.5 && angle < 112.5) direction = 'N';
+    else if (angle >= 112.5 && angle < 157.5) direction = 'NW';
+    else if (angle >= 157.5 || angle < -157.5) direction = 'W';
+    else if (angle >= -157.5 && angle < -112.5) direction = 'SW';
+    else if (angle >= -112.5 && angle < -67.5) direction = 'S';
+    else if (angle >= -67.5 && angle < -22.5) direction = 'SE';
+    
+    document.getElementById('campfireDirection').textContent = direction;
+    document.getElementById('campfireDistance').textContent = Math.round(distance) + 'm';
+}
+
+function updateUI() {
+    document.getElementById('healthValue').textContent = player.health;
+    document.getElementById('weaponValue').textContent = player.weapon;
+    document.getElementById('armorValue').textContent = player.armor;
+    document.getElementById('campfireLevel').textContent = campfire.level;
+    
+    let isDay = gameTime >= 6 && gameTime < 18;
+    document.getElementById('timeDisplay').textContent = isDay ? '🌞 Day' : '🌙 Night';
+    
+    document.getElementById('campfireHealth').textContent = Math.floor(campfire.health);
+    document.getElementById('campfireMax').textContent = campfire.maxHealth;
+    document.getElementById('campfireLevelNum').textContent = campfire.level;
+    document.getElementById('campfireRange').textContent = campfire.repelRange;
+    
+    let timeInfo = getTimeRemaining();
+    document.getElementById('timeRemaining').textContent = timeInfo.text;
+    document.getElementById('towerStatus').textContent = getTowerStatus();
+    
+    updateInventoryDisplay();
+    
+    if (campfire.level < 5) {
+        let nextCost = campfire.upgradeCosts[campfire.level - 1];
+        document.getElementById('woodReq').textContent = nextCost.wood || 0;
+        document.getElementById('stoneReq').textContent = nextCost.stone || 0;
+        document.getElementById('ironReq').textContent = nextCost.iron || 0;
+        document.getElementById('crystalReq').textContent = nextCost.crystal || 0;
+        document.getElementById('goldReq').textContent = nextCost.gold || 0;
+        
+        document.getElementById('reqWood').className = 'req-item' + ((player.inventory.wood || 0) >= (nextCost.wood || 0) ? ' met' : '');
+        document.getElementById('reqStone').className = 'req-item' + ((player.inventory.stone || 0) >= (nextCost.stone || 0) ? ' met' : '');
+        document.getElementById('reqIron').className = 'req-item' + ((player.inventory.iron || 0) >= (nextCost.iron || 0) ? ' met' : '');
+        document.getElementById('reqCrystal').className = 'req-item' + ((player.inventory.crystal || 0) >= (nextCost.crystal || 0) ? ' met' : '');
+        document.getElementById('reqGold').className = 'req-item' + ((player.inventory.gold || 0) >= (nextCost.gold || 0) ? ' met' : '');
+    }
+    
+    let canUpgrade = campfire.level < 5;
+    if (canUpgrade) {
+        let nextCost = campfire.upgradeCosts[campfire.level - 1];
+        canUpgrade = (player.inventory.wood || 0) >= (nextCost.wood || 0) &&
+                    (player.inventory.stone || 0) >= (nextCost.stone || 0) &&
+                    (player.inventory.iron || 0) >= (nextCost.iron || 0) &&
+                    (player.inventory.crystal || 0) >= (nextCost.crystal || 0) &&
+                    (player.inventory.gold || 0) >= (nextCost.gold || 0);
+    }
+    
+    document.getElementById('upgradeBtn').className = canUpgrade ? '' : 'disabled';
+}
+
+// ==================== DRAWING FUNCTIONS ====================
 function drawMiniMap() {
     miniMapCtx.clearRect(0, 0, 120, 120);
     miniMapCtx.fillStyle = '#1a1e34';
@@ -396,54 +470,6 @@ function drawMiniMap() {
     miniMapCtx.strokeRect(0, 0, 120, 120);
 }
 
-// Update campfire direction
-function updateCampfireIndicator() {
-    let dx = CAMPFIRE_X - player.x;
-    let dy = CAMPFIRE_Y - player.y;
-    let distance = Math.sqrt(dx*dx + dy*dy);
-    
-    let angle = Math.atan2(dy, dx) * 180 / Math.PI;
-    let direction = '';
-    
-    if (angle >= -22.5 && angle < 22.5) direction = 'E';
-    else if (angle >= 22.5 && angle < 67.5) direction = 'NE';
-    else if (angle >= 67.5 && angle < 112.5) direction = 'N';
-    else if (angle >= 112.5 && angle < 157.5) direction = 'NW';
-    else if (angle >= 157.5 || angle < -157.5) direction = 'W';
-    else if (angle >= -157.5 && angle < -112.5) direction = 'SW';
-    else if (angle >= -112.5 && angle < -67.5) direction = 'S';
-    else if (angle >= -67.5 && angle < -22.5) direction = 'SE';
-    
-    document.getElementById('campfireDirection').textContent = direction;
-    document.getElementById('campfireDistance').textContent = Math.round(distance) + 'm';
-}
-
-function isInsideCampfireRange(x, y) {
-    let dist = Math.sqrt((x - CAMPFIRE_X) ** 2 + (y - CAMPFIRE_Y) ** 2);
-    return dist <= campfire.repelRange;
-}
-
-function isTowerAvailable() {
-    if (!tower.defeated) return true;
-    let daysPassed = (gameTime - tower.defeatTime);
-    if (daysPassed < 0) daysPassed += 24;
-    return daysPassed >= tower.cooldownDays;
-}
-
-function getTowerStatus() {
-    if (!tower.defeated) return "Available Now!";
-    let daysPassed = (gameTime - tower.defeatTime);
-    if (daysPassed < 0) daysPassed += 24;
-    let daysRemaining = Math.max(0, tower.cooldownDays - daysPassed);
-    if (daysRemaining <= 0) {
-        tower.defeated = false;
-        tower.guardianHealth = tower.guardianMaxHealth;
-        return "Available Now!";
-    }
-    return `Cooldown: ${daysRemaining.toFixed(1)} days`;
-}
-
-// Draw main game
 function draw() {
     updateCamera();
     updateCampfireIndicator();
@@ -541,27 +567,25 @@ function draw() {
     ctx.font = '16px Arial';
     ctx.fillText('🔨', benchScreen.x - 10, benchScreen.y - 25);
     
-    // Resources with better quality
+    // Resources
     resources.forEach(r => {
         let rScreen = worldToScreen(r.x, r.y);
         if (rScreen.x > -30 && rScreen.x < canvas.width + 30 && rScreen.y > -30 && rScreen.y < canvas.height + 30) {
             const material = r.material;
             
-            // Glow effect based on rarity
             ctx.shadowColor = material.color;
             ctx.shadowBlur = material.rarity === 'legendary' ? 20 : 
                             material.rarity === 'epic' ? 15 : 
                             material.rarity === 'rare' ? 10 : 5;
             
-            // Draw based on type
-            if (material.id === 'wood' || material.id === 'tree') {
+            if (material.id === 'wood') {
                 ctx.fillStyle = '#8b5a2b';
                 ctx.fillRect(rScreen.x - 5, rScreen.y - 8, 10, 25);
                 ctx.fillStyle = '#2e8b57';
                 ctx.beginPath();
                 ctx.arc(rScreen.x, rScreen.y - 20, 12, 0, Math.PI * 2);
                 ctx.fill();
-            } else if (material.id === 'stone' || material.id === 'rock') {
+            } else if (material.id === 'stone') {
                 ctx.fillStyle = material.color;
                 ctx.beginPath();
                 ctx.ellipse(rScreen.x, rScreen.y, 10, 6, 0, 0, Math.PI * 2);
@@ -569,7 +593,6 @@ function draw() {
             } else if (material.id === 'iron' || material.id === 'copper') {
                 ctx.fillStyle = material.color;
                 ctx.fillRect(rScreen.x - 8, rScreen.y - 8, 16, 16);
-                // Highlight
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = '#ffffff';
                 ctx.globalAlpha = 0.3;
@@ -580,7 +603,6 @@ function draw() {
                 ctx.beginPath();
                 ctx.arc(rScreen.x, rScreen.y, 8, 0, Math.PI * 2);
                 ctx.fill();
-                // Sparkle
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
@@ -609,7 +631,6 @@ function draw() {
                 ctx.arc(rScreen.x, rScreen.y, 8, 0, Math.PI * 2);
                 ctx.fill();
             } else {
-                // Generic shape
                 ctx.fillStyle = material.color;
                 ctx.beginPath();
                 ctx.arc(rScreen.x, rScreen.y, 8, 0, Math.PI * 2);
@@ -622,7 +643,6 @@ function draw() {
             ctx.fillStyle = '#ff0000';
             ctx.fillRect(rScreen.x - 12, rScreen.y - 30, 24 * (r.health / r.maxHealth), 4);
             
-            // Rarity indicator
             if (material.rarity === 'legendary') {
                 ctx.strokeStyle = '#ffd700';
                 ctx.lineWidth = 2;
@@ -698,7 +718,7 @@ function draw() {
     updateUI();
 }
 
-// Open crafting bench
+// ==================== CRAFTING FUNCTIONS ====================
 function openCraftingBench() {
     let grid = document.getElementById('benchCraftingGrid');
     grid.innerHTML = '';
@@ -732,11 +752,6 @@ function openCraftingBench() {
             <div class="item-name">${recipe.name}</div>
             <div class="item-req">${recipe.req}</div>
         `;
-        slot.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            recipe.craft();
-            updateUI();
-        });
         slot.addEventListener('click', () => {
             recipe.craft();
             updateUI();
@@ -751,43 +766,6 @@ function closeBenchPopup() {
     document.getElementById('craftingBenchPopup').style.display = 'none';
 }
 
-// Quick craft
-function quickCraft() {
-    if (player.inventory.herb >= 3) {
-        player.inventory.herb -= 3;
-        player.health = Math.min(player.maxHealth, player.health + 20);
-        alert("Crafted Herbal Potion! +20 HP");
-        updateInventoryDisplay();
-    } else {
-        alert("Need 3 herbs!");
-    }
-}
-
-// Heal
-function playerHeal() {
-    if (healCooldown > 0) {
-        alert(`Heal on cooldown! ${healCooldown}s remaining`);
-        return;
-    }
-    if (player.inventory.herb >= 1) {
-        player.inventory.herb -= 1;
-        player.health = Math.min(player.maxHealth, player.health + 10);
-        healCooldown = 10;
-        document.getElementById('healBtn').classList.add('disabled');
-        let cooldownInterval = setInterval(() => {
-            healCooldown--;
-            if (healCooldown <= 0) {
-                clearInterval(cooldownInterval);
-                document.getElementById('healBtn').classList.remove('disabled');
-            }
-        }, 1000);
-        updateInventoryDisplay();
-    } else {
-        alert("Not enough herbs!");
-    }
-}
-
-// Craft helper
 function craftItem(requirements) {
     let canCraft = true;
     for (let [item, amount] of Object.entries(requirements)) {
@@ -820,7 +798,18 @@ function craftItem(requirements) {
     }
 }
 
-// Tower functions
+function quickCraft() {
+    if (player.inventory.herb >= 3) {
+        player.inventory.herb -= 3;
+        player.health = Math.min(player.maxHealth, player.health + 20);
+        alert("Crafted Herbal Potion! +20 HP");
+        updateInventoryDisplay();
+    } else {
+        alert("Need 3 herbs!");
+    }
+}
+
+// ==================== TOWER FUNCTIONS ====================
 function enterTower() {
     if (!isTowerAvailable()) {
         alert("Tower is on cooldown! Wait " + getTowerStatus());
@@ -852,7 +841,6 @@ function towerAttack() {
         addTowerLog("🎉 VICTORY! You defeated the tower guardian!");
         
         let rewards = [];
-        // Give rare materials as rewards
         if (Math.random() > 0.4) {
             player.inventory.sapphire = (player.inventory.sapphire || 0) + 1;
             rewards.push("1 Sapphire");
@@ -922,7 +910,7 @@ function closeTower() {
     document.getElementById('towerPopup').style.display = 'none';
 }
 
-// Building inventory
+// ==================== BUILDING FUNCTIONS ====================
 function showBuildingInventory(building) {
     let grid = document.getElementById('buildingInventoryGrid');
     let nameEl = document.getElementById('buildingName');
@@ -938,10 +926,6 @@ function showBuildingInventory(building) {
                 <div class="item-icon">${material.icon}</div>
                 <div class="item-count">${count}</div>
             `;
-            slot.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                takeFromBuilding(building, item);
-            });
             slot.addEventListener('click', () => takeFromBuilding(building, item));
             grid.appendChild(slot);
         }
@@ -974,57 +958,154 @@ function closeBuildingInventory() {
     document.getElementById('buildingInventory').style.display = 'none';
 }
 
-// Update UI
-function updateUI() {
-    document.getElementById('healthValue').textContent = player.health;
-    document.getElementById('weaponValue').textContent = player.weapon;
-    document.getElementById('armorValue').textContent = player.armor;
-    document.getElementById('campfireLevel').textContent = campfire.level;
+// ==================== PLAYER ACTIONS ====================
+function playerAttack() {
+    if (attackCooldown > 0 || inTower) return;
     
-    let isDay = gameTime >= 6 && gameTime < 18;
-    document.getElementById('timeDisplay').textContent = isDay ? '🌞 Day' : '🌙 Night';
+    let attacked = false;
+    enemies.forEach((e, i) => {
+        if (Math.sqrt((player.x - e.x) ** 2 + (player.y - e.y) ** 2) < 60) {
+            e.health -= player.weaponDamage;
+            attackCooldown = 15;
+            attacked = true;
+        }
+    });
     
-    document.getElementById('campfireHealth').textContent = Math.floor(campfire.health);
-    document.getElementById('campfireMax').textContent = campfire.maxHealth;
-    document.getElementById('campfireLevelNum').textContent = campfire.level;
-    document.getElementById('campfireRange').textContent = campfire.repelRange;
-    
-    let timeInfo = getTimeRemaining();
-    document.getElementById('timeRemaining').textContent = timeInfo.text;
-    document.getElementById('towerStatus').textContent = getTowerStatus();
-    
-    updateInventoryDisplay();
-    
-    // Upgrade requirements
-    if (campfire.level < 5) {
-        let nextCost = campfire.upgradeCosts[campfire.level - 1];
-        document.getElementById('woodReq').textContent = nextCost.wood || 0;
-        document.getElementById('stoneReq').textContent = nextCost.stone || 0;
-        document.getElementById('ironReq').textContent = nextCost.iron || 0;
-        document.getElementById('crystalReq').textContent = nextCost.crystal || 0;
-        document.getElementById('goldReq').textContent = nextCost.gold || 0;
-        
-        document.getElementById('reqWood').className = 'req-item' + ((player.inventory.wood || 0) >= (nextCost.wood || 0) ? ' met' : '');
-        document.getElementById('reqStone').className = 'req-item' + ((player.inventory.stone || 0) >= (nextCost.stone || 0) ? ' met' : '');
-        document.getElementById('reqIron').className = 'req-item' + ((player.inventory.iron || 0) >= (nextCost.iron || 0) ? ' met' : '');
-        document.getElementById('reqCrystal').className = 'req-item' + ((player.inventory.crystal || 0) >= (nextCost.crystal || 0) ? ' met' : '');
-        document.getElementById('reqGold').className = 'req-item' + ((player.inventory.gold || 0) >= (nextCost.gold || 0) ? ' met' : '');
+    if (attacked) {
+        // Visual feedback
+        canvas.style.border = '3px solid #ff0000';
+        setTimeout(() => canvas.style.border = '3px solid #0f3460', 100);
     }
-    
-    let canUpgrade = campfire.level < 5;
-    if (canUpgrade) {
-        let nextCost = campfire.upgradeCosts[campfire.level - 1];
-        canUpgrade = (player.inventory.wood || 0) >= (nextCost.wood || 0) &&
-                    (player.inventory.stone || 0) >= (nextCost.stone || 0) &&
-                    (player.inventory.iron || 0) >= (nextCost.iron || 0) &&
-                    (player.inventory.crystal || 0) >= (nextCost.crystal || 0) &&
-                    (player.inventory.gold || 0) >= (nextCost.gold || 0);
-    }
-    
-    document.getElementById('upgradeBtn').className = canUpgrade ? '' : 'disabled';
 }
 
-// Game update
+function playerInteract() {
+    if (inTower) return;
+    
+    let distToTower = Math.sqrt((player.x - TOWER_X) ** 2 + (player.y - TOWER_Y) ** 2);
+    if (distToTower < 80) {
+        enterTower();
+        return;
+    }
+    
+    let distToBench = Math.sqrt((player.x - CRAFTING_BENCH_X) ** 2 + (player.y - CRAFTING_BENCH_Y) ** 2);
+    if (distToBench < 60) {
+        openCraftingBench();
+        return;
+    }
+    
+    for (let b of buildings) {
+        let dist = Math.sqrt((player.x - b.x) ** 2 + (player.y - b.y) ** 2);
+        if (dist < 60) {
+            showBuildingInventory(b);
+            return;
+        }
+    }
+    
+    let gathered = false;
+    resources.forEach((r, i) => {
+        let dist = Math.sqrt((player.x - r.x) ** 2 + (player.y - r.y) ** 2);
+        if (dist < 50) {
+            r.health -= Math.max(1, Math.floor(player.weaponDamage / 2));
+            gathered = true;
+            if (r.health <= 0) {
+                player.inventory[r.type] = (player.inventory[r.type] || 0) + 1;
+                resources.splice(i, 1);
+                
+                setTimeout(() => {
+                    let x, y;
+                    do {
+                        x = 100 + Math.random() * (WORLD_SIZE - 200);
+                        y = 100 + Math.random() * (WORLD_SIZE - 200);
+                    } while (!isValidResourcePosition(x, y));
+                    
+                    const newMaterial = generateRandomResource();
+                    resources.push({
+                        x, y,
+                        type: newMaterial.id,
+                        material: newMaterial,
+                        health: newMaterial.baseHealth,
+                        maxHealth: newMaterial.baseHealth
+                    });
+                }, 30000);
+            }
+        }
+    });
+    
+    if (gathered) {
+        // Visual feedback
+        canvas.style.border = '3px solid #00ff00';
+        setTimeout(() => canvas.style.border = '3px solid #0f3460', 100);
+    }
+}
+
+function repairCampfire() {
+    if (player.inventory.wood >= 10 && player.inventory.stone >= 5) {
+        campfire.health = Math.min(campfire.maxHealth, campfire.health + 100);
+        player.inventory.wood -= 10;
+        player.inventory.stone -= 5;
+        updateInventoryDisplay();
+        alert("Campfire repaired! +100 HP");
+    } else {
+        alert("Need 10 wood and 5 stone to repair!");
+    }
+}
+
+function upgradeCampfire() {
+    if (campfire.level >= 5) {
+        alert("Campfire is already at max level!");
+        return;
+    }
+    
+    let cost = campfire.upgradeCosts[campfire.level - 1];
+    let canUpgrade = true;
+    
+    for (let [item, amount] of Object.entries(cost)) {
+        if ((player.inventory[item] || 0) < amount) canUpgrade = false;
+    }
+    
+    if (canUpgrade) {
+        for (let [item, amount] of Object.entries(cost)) {
+            player.inventory[item] -= amount;
+        }
+        
+        campfire.level++;
+        campfire.maxHealth = 500 + (campfire.level * 250);
+        campfire.health = campfire.maxHealth;
+        campfire.repelRange = 150 + (campfire.level * 50);
+        player.campfireLevel = campfire.level;
+        
+        alert(`Campfire upgraded to Level ${campfire.level}!`);
+        generateWorld();
+        updateInventoryDisplay();
+    } else {
+        alert("Not enough materials for upgrade!");
+    }
+}
+
+function playerHeal() {
+    if (healCooldown > 0) {
+        alert(`Heal on cooldown! ${healCooldown}s remaining`);
+        return;
+    }
+    if (player.inventory.herb >= 1) {
+        player.inventory.herb -= 1;
+        player.health = Math.min(player.maxHealth, player.health + 10);
+        healCooldown = 10;
+        document.getElementById('healBtn').classList.add('disabled');
+        let cooldownInterval = setInterval(() => {
+            healCooldown--;
+            if (healCooldown <= 0) {
+                clearInterval(cooldownInterval);
+                document.getElementById('healBtn').classList.remove('disabled');
+            }
+        }, 1000);
+        updateInventoryDisplay();
+    } else {
+        alert("Not enough herbs!");
+    }
+}
+
+// ==================== GAME LOOP ====================
 function update() {
     if (!gameRunning) return;
     
@@ -1033,13 +1114,17 @@ function update() {
     
     if (attackCooldown > 0) attackCooldown--;
     
-    if (joystickActive && !inTower) {
-        player.x += joystickDir.x * 5;
-        player.y += joystickDir.y * 5;
+    // Keyboard movement
+    if (!inTower) {
+        if (keys['w'] || keys['W']) player.y -= moveSpeed;
+        if (keys['s'] || keys['S']) player.y += moveSpeed;
+        if (keys['a'] || keys['A']) player.x -= moveSpeed;
+        if (keys['d'] || keys['D']) player.x += moveSpeed;
         player.x = Math.max(50, Math.min(WORLD_SIZE - 50, player.x));
         player.y = Math.max(50, Math.min(WORLD_SIZE - 50, player.y));
     }
     
+    // Enemy AI
     if (!inTower) {
         enemies.forEach((e, i) => {
             let distToCampfire = Math.sqrt((e.x - CAMPFIRE_X) ** 2 + (e.y - CAMPFIRE_Y) ** 2);
@@ -1099,112 +1184,6 @@ function update() {
     requestAnimationFrame(update);
 }
 
-// Player actions
-function playerAttack() {
-    if (attackCooldown > 0 || inTower) return;
-    enemies.forEach((e, i) => {
-        if (Math.sqrt((player.x - e.x) ** 2 + (player.y - e.y) ** 2) < 60) {
-            e.health -= player.weaponDamage;
-            attackCooldown = 15;
-        }
-    });
-}
-
-function playerInteract() {
-    if (inTower) return;
-    
-    let distToTower = Math.sqrt((player.x - TOWER_X) ** 2 + (player.y - TOWER_Y) ** 2);
-    if (distToTower < 80) {
-        enterTower();
-        return;
-    }
-    
-    let distToBench = Math.sqrt((player.x - CRAFTING_BENCH_X) ** 2 + (player.y - CRAFTING_BENCH_Y) ** 2);
-    if (distToBench < 60) {
-        openCraftingBench();
-        return;
-    }
-    
-    for (let b of buildings) {
-        let dist = Math.sqrt((player.x - b.x) ** 2 + (player.y - b.y) ** 2);
-        if (dist < 60) {
-            showBuildingInventory(b);
-            return;
-        }
-    }
-    
-    resources.forEach((r, i) => {
-        let dist = Math.sqrt((player.x - r.x) ** 2 + (player.y - r.y) ** 2);
-        if (dist < 50) {
-            r.health -= Math.max(1, Math.floor(player.weaponDamage / 2));
-            if (r.health <= 0) {
-                player.inventory[r.type] = (player.inventory[r.type] || 0) + 1;
-                resources.splice(i, 1);
-                
-                setTimeout(() => {
-                    let x, y;
-                    do {
-                        x = 100 + Math.random() * (WORLD_SIZE - 200);
-                        y = 100 + Math.random() * (WORLD_SIZE - 200);
-                    } while (!isValidResourcePosition(x, y));
-                    
-                    const newMaterial = generateRandomResource();
-                    resources.push({
-                        x, y,
-                        type: newMaterial.id,
-                        material: newMaterial,
-                        health: newMaterial.baseHealth,
-                        maxHealth: newMaterial.baseHealth
-                    });
-                }, 30000); // 30 second respawn
-            }
-        }
-    });
-}
-
-function repairCampfire() {
-    if (player.inventory.wood >= 10 && player.inventory.stone >= 5) {
-        campfire.health = Math.min(campfire.maxHealth, campfire.health + 100);
-        player.inventory.wood -= 10;
-        player.inventory.stone -= 5;
-        updateInventoryDisplay();
-    } else {
-        alert("Need 10 wood and 5 stone to repair!");
-    }
-}
-
-function upgradeCampfire() {
-    if (campfire.level >= 5) {
-        alert("Campfire is already at max level!");
-        return;
-    }
-    
-    let cost = campfire.upgradeCosts[campfire.level - 1];
-    let canUpgrade = true;
-    
-    for (let [item, amount] of Object.entries(cost)) {
-        if ((player.inventory[item] || 0) < amount) canUpgrade = false;
-    }
-    
-    if (canUpgrade) {
-        for (let [item, amount] of Object.entries(cost)) {
-            player.inventory[item] -= amount;
-        }
-        
-        campfire.level++;
-        campfire.maxHealth = 500 + (campfire.level * 250);
-        campfire.health = campfire.maxHealth;
-        campfire.repelRange = 150 + (campfire.level * 50);
-        player.campfireLevel = campfire.level;
-        
-        alert(`Campfire upgraded to Level ${campfire.level}!`);
-        generateWorld();
-        updateInventoryDisplay();
-    } else {
-        alert("Not enough materials for upgrade!");
-    }
-}
-
 function resetGame() {
     player = {
         x: 900, y: 1000, health: 100, maxHealth: 100,
@@ -1226,126 +1205,81 @@ function resetGame() {
     enemies = [];
     generateWorld();
     updateInventoryDisplay();
+    alert("Game Over! Game Reset!");
 }
 
-// Joystick handlers
-function handleTouchStart(e) {
-    e.preventDefault();
-    let touch = e.touches[0];
-    let rect = document.getElementById('joystickContainer').getBoundingClientRect();
-    joystickStartPos = { x: rect.left + rect.width/2, y: rect.top + rect.height/2 };
-    joystickCurrentPos = { x: touch.clientX, y: touch.clientY };
-    joystickActive = true;
-}
-
-function handleTouchMove(e) {
-    e.preventDefault();
-    if (!joystickActive) return;
-    let touch = e.touches[0];
-    joystickCurrentPos = { x: touch.clientX, y: touch.clientY };
-    let dx = joystickCurrentPos.x - joystickStartPos.x;
-    let dy = joystickCurrentPos.y - joystickStartPos.y;
-    let dist = Math.sqrt(dx*dx + dy*dy);
-    let maxDist = 25;
-    if (dist > maxDist) {
-        dx = (dx/dist) * maxDist;
-        dy = (dy/dist) * maxDist;
-    }
-    joystickDir = { x: dx/maxDist, y: dy/maxDist };
-    document.getElementById('joystick').style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-}
-
-function handleTouchEnd(e) {
-    e.preventDefault();
-    joystickActive = false;
-    joystickDir = { x: 0, y: 0 };
-    document.getElementById('joystick').style.transform = 'translate(-50%, -50%)';
-}
-
-// Initialize event listeners
-function initEventListeners() {
-    // Joystick
-    document.getElementById('joystickContainer').addEventListener('touchstart', handleTouchStart);
-    document.getElementById('joystickContainer').addEventListener('touchmove', handleTouchMove);
-    document.getElementById('joystickContainer').addEventListener('touchend', handleTouchEnd);
+// ==================== KEYBOARD CONTROLS ====================
+function handleKeyDown(e) {
+    keys[e.key] = true;
     
-    // Action buttons
-    document.getElementById('attackBtn').addEventListener('click', playerAttack);
-    document.getElementById('attackBtn').addEventListener('touchstart', (e) => {
+    // Action keys (prevent default browser actions)
+    if (e.key === ' ' || e.key === 'Space') {
         e.preventDefault();
         playerAttack();
-    });
-    
-    document.getElementById('interactBtn').addEventListener('click', playerInteract);
-    document.getElementById('interactBtn').addEventListener('touchstart', (e) => {
+    }
+    if (e.key === 'e' || e.key === 'E') {
         e.preventDefault();
         playerInteract();
-    });
-    
-    document.getElementById('benchBtn').addEventListener('click', openCraftingBench);
-    document.getElementById('benchBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        openCraftingBench();
-    });
-    
-    document.getElementById('repairBtn').addEventListener('click', repairCampfire);
-    document.getElementById('repairBtn').addEventListener('touchstart', (e) => {
+    }
+    if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         repairCampfire();
-    });
-    
-    document.getElementById('healBtn').addEventListener('click', playerHeal);
-    document.getElementById('healBtn').addEventListener('touchstart', (e) => {
+    }
+    if (e.key === 'c' || e.key === 'C') {
         e.preventDefault();
-        playerHeal();
-    });
-    
-    document.getElementById('quickCraftBtn').addEventListener('click', quickCraft);
-    document.getElementById('quickCraftBtn').addEventListener('touchstart', (e) => {
+        openCraftingBench();
+    }
+    if (e.key === 'q' || e.key === 'Q') {
         e.preventDefault();
         quickCraft();
-    });
-    
-    document.getElementById('upgradeBtn').addEventListener('click', upgradeCampfire);
-    document.getElementById('upgradeBtn').addEventListener('touchstart', (e) => {
+    }
+    if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        playerHeal();
+    }
+    if (e.key === 'u' || e.key === 'U') {
         e.preventDefault();
         upgradeCampfire();
-    });
+    }
+    if (e.key === 'Escape') {
+        closeTower();
+        closeBenchPopup();
+        closeBuildingInventory();
+    }
+}
+
+function handleKeyUp(e) {
+    keys[e.key] = false;
+}
+
+// ==================== INITIALIZATION ====================
+function initEventListeners() {
+    // Keyboard
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    // Mouse clicks for buttons
+    document.getElementById('attackBtn').addEventListener('click', playerAttack);
+    document.getElementById('interactBtn').addEventListener('click', playerInteract);
+    document.getElementById('benchBtn').addEventListener('click', openCraftingBench);
+    document.getElementById('repairBtn').addEventListener('click', repairCampfire);
+    document.getElementById('healBtn').addEventListener('click', playerHeal);
+    document.getElementById('quickCraftBtn').addEventListener('click', quickCraft);
+    document.getElementById('upgradeBtn').addEventListener('click', upgradeCampfire);
     
     // Tower popup buttons
     document.getElementById('towerAttackBtn').addEventListener('click', towerAttack);
-    document.getElementById('towerAttackBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        towerAttack();
-    });
-    
     document.getElementById('towerHealBtn').addEventListener('click', towerHeal);
-    document.getElementById('towerHealBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        towerHeal();
-    });
-    
     document.getElementById('closeTowerBtn').addEventListener('click', closeTower);
-    document.getElementById('closeTowerBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        closeTower();
-    });
     
     // Close popup buttons
     document.getElementById('closeBenchPopup').addEventListener('click', closeBenchPopup);
-    document.getElementById('closeBenchPopup').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        closeBenchPopup();
-    });
-    
     document.getElementById('closeBuildingInventory').addEventListener('click', closeBuildingInventory);
-    document.getElementById('closeBuildingInventory').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        closeBuildingInventory();
-    });
+    
+    // Prevent context menu on canvas
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
-// Start the game
 function init() {
     generateWorld();
     updateInventoryDisplay();
@@ -1354,5 +1288,5 @@ function init() {
     update();
 }
 
-// Start everything when page loads
+// Start the game
 window.addEventListener('load', init);
